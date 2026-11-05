@@ -1,0 +1,33 @@
+node_modules/
+dist/
+release/
+coverage/
+.cache/
+.env
+.env.*
+!.env.example
+config.local.json
+private/
+*.log
+*.local.*
+.playwright-cli/
+output/
+
+# Local handoff and work notes are not public documentation.
+/docs/HANDOFF.md
+/docs/RESET-CREDITS.md
+/notes.md
+/task_plan.md
+
+# Never publish runtime credentials, account dumps, databases or media.
+credentials.json
+config.json
+reset-operations.json
+*.private.*
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.jsonl
+*.key
+*.pem

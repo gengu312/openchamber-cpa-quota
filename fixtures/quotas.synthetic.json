@@ -1,0 +1,103 @@
+{
+  "configured": true,
+  "refreshing": false,
+  "updated_at": "2026-11-05T06:00:00Z",
+  "next_refresh_at": "2026-11-05T06:02:00Z",
+  "error": null,
+  "accounts": [
+    {
+      "id": "synthetic-antigravity-1",
+      "label": "Synthetic Google A",
+      "provider": "antigravity",
+      "plan": null,
+      "status": "available",
+      "error": null,
+      "updated_at": "2026-11-05T06:00:00Z",
+      "stale": false,
+      "windows": [
+        {
+          "id": "synthetic-gemini-5h",
+          "label": "Gemini pool / 5 hours",
+          "used_percent": 0,
+          "remaining_percent": 100,
+          "quota_group": "synthetic-gemini",
+          "resets_at": null,
+          "duration_seconds": 18000,
+          "current_cost": null,
+          "current_tokens": null,
+          "estimated_cost": null,
+          "estimated_tokens": null,
+          "estimate_basis": null,
+          "usage_error": "Synthetic usage details unavailable"
+        },
+        {
+          "id": "synthetic-claude-gpt-7d",
+          "label": "Claude / GPT pool / 7 days",
+          "used_percent": 65,
+          "remaining_percent": 35,
+          "quota_group": "synthetic-claude-gpt",
+          "resets_at": "2026-11-07T06:00:00Z",
+          "duration_seconds": 604800,
+          "current_cost": null,
+          "current_tokens": null,
+          "estimated_cost": null,
+          "estimated_tokens": null,
+          "estimate_basis": null,
+          "usage_error": "Synthetic usage details unavailable"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-claude-1",
+      "label": "Synthetic Claude A",
+      "provider": "claude",
+      "plan": "Pro",
+      "status": "available",
+      "error": null,
+      "updated_at": "2026-11-05T06:00:00Z",
+      "stale": false,
+      "windows": [
+        {
+          "id": "synthetic-claude-weekly",
+          "label": "7 days",
+          "used_percent": 40,
+          "remaining_percent": 60,
+          "resets_at": "2026-11-09T06:00:00Z",
+          "duration_seconds": 604800,
+          "current_cost": 2.5,
+          "current_tokens": 125000,
+          "estimated_cost": 6.25,
+          "estimated_tokens": 312500,
+          "estimate_basis": "synthetic",
+          "usage_error": null
+        }
+      ]
+    },
+    {
+      "id": "synthetic-codex-1",
+      "label": "Synthetic Codex A",
+      "provider": "codex",
+      "plan": "synthetic-plan",
+      "status": "available",
+      "error": null,
+      "updated_at": "2026-11-05T06:00:00Z",
+      "stale": true,
+      "windows": [
+        {
+          "id": "synthetic-codex-weekly",
+          "label": "7 days",
+          "used_percent": 100,
+          "remaining_percent": 0,
+          "resets_at": "2026-11-06T06:00:00Z",
+          "duration_seconds": 604800,
+          "current_cost": null,
+          "current_tokens": null,
+          "estimated_cost": null,
+          "estimated_tokens": null,
+          "estimate_basis": null,
+          "usage_error": "Synthetic usage details unavailable"
+        }
+      ]
+    }
+  ]
+}
