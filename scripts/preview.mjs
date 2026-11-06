@@ -10,6 +10,7 @@ const now = Date.now();
 const quota = JSON.parse(await readFile('fixtures/quotas.synthetic.json', 'utf8'));
 quota.updated_at = new Date(now).toISOString();
 quota.accounts.forEach((a) => { a.updated_at = quota.updated_at; });
+quota.accounts.forEach((account) => account.windows.forEach((window) => { if (window.resets_at) window.resets_at = new Date(now + window.duration_seconds * 600).toISOString(); }));
 const credits = JSON.parse(await readFile('fixtures/reset-credits.synthetic.json', 'utf8'));
 credits.generated_at = quota.updated_at;
 const snapshot = publicSnapshot({ data: parseQuotas(quota), fetchedAt: now, lastAttemptAt: now, stale: false, errorCode: null }, now);
@@ -25,11 +26,28 @@ const harness = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><
 const frame = document.querySelector('iframe');
 const snapshot = ${JSON.stringify(snapshot)};
 const reset = ${JSON.stringify(reset)};
-const tokens = {background:'#16191c',foreground:'#e8e9e8',muted:'#a8afba',border:'#363c45',primary:'#75b5b1',warningText:'#dfb979',hover:'#293036',focus:'#75b5b1',font:'"Segoe UI",sans-serif',mono:'Consolas,monospace'};
+const dark = {background:'#0b1220',elevated:'#111a29',foreground:'#e9edf4',muted:'#8f9db2',border:'#293346',primary:'#6aa8ed',warningText:'#dfb979',successText:'#55c99a',errorText:'#ed8792',hover:'#1b2738',focus:'#6aa8ed',font:'"Segoe UI",sans-serif',mono:'Consolas,monospace'};
+const light = {...dark,background:'#f7f8fa',foreground:'#182536',muted:'#65758b',border:'#dbe1e9',successText:'#167553',warningText:'#93641b',errorText:'#b73147'};
+const lightMode = new URLSearchParams(location.search).get('theme') === 'light';
+const tokens = lightMode ? light : dark;
+const storageKey = 'cpa-synthetic-host-storage';
+let stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
 window.addEventListener('message', async event => {
   if (event.source !== frame.contentWindow || event.data?.channel !== 'openchamber.sdk') return;
   const m = event.data;
-  if (m.type === 'hello') frame.contentWindow.postMessage({channel:m.channel,v:1,type:'ready',payload:{theme:{mode:'dark',tokens},surface:'panel',directory:null,session:null,connection:null,settings:{},item:null}}, location.origin);
+  if (m.type === 'hello') frame.contentWindow.postMessage({channel:m.channel,v:1,type:'ready',payload:{theme:{mode:lightMode?'light':'dark',tokens},surface:'panel',directory:null,session:null,connection:null,settings:{},item:null}}, location.origin);
+  if (m.type === 'storage') {
+    const {op,key,value} = m.payload;
+    if (op === 'set' && window.failStorage) {
+      frame.contentWindow.postMessage({channel:m.channel,v:1,type:'result',id:m.id,ok:false,error:'Synthetic storage failure'}, location.origin);
+      return;
+    }
+    if (op === 'set') stored[key] = value;
+    if (op === 'delete') delete stored[key];
+    localStorage.setItem(storageKey, JSON.stringify(stored));
+    const payload = op === 'get' ? {storage:true,op,found:Object.hasOwn(stored,key),...(Object.hasOwn(stored,key)?{value:stored[key]}:{})} : op === 'keys' ? {storage:true,op,keys:Object.keys(stored)} : {storage:true,op};
+    frame.contentWindow.postMessage({channel:m.channel,v:1,type:'result',id:m.id,ok:true,payload}, location.origin);
+  }
   if (m.type === 'service-request') {
     let body = m.payload.path === '/snapshot' ? snapshot : reset;
     let status = 200;
@@ -47,7 +65,7 @@ const assets = new Map([
   ['/panel/style.css', ['dist/desktop-compat/panel/style.css', 'text/css; charset=utf-8']],
 ]);
 const server = http.createServer(async (req, res) => {
-  if (req.url === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(harness); return; }
+  if (req.url === '/' || req.url.startsWith('/?')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(harness); return; }
   if (req.url === '/health') { res.end('synthetic-only'); return; }
   if (req.url === '/mock-count') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ mock: true, writes })); return; }
   if (req.url === '/mock-action' && req.method === 'POST') {

@@ -12,7 +12,7 @@
 - 接受 desktop-compat manifest。
 - 拒绝 native manifest，返回 `invalid-service`（quota role 不在合同中）。
 
-这只证明 manifest 解析兼容；本次**没有安装到用户正在用的 OpenChamber 2.6.1 + OpenCode 2.2.5**，没有验证其服务生命周期和真实 UI。该正式版无法仅靠本扩展实现目标手机原生额度。
+初次 0.2.0 验证只证明 manifest 解析兼容。后续 0.3.0 已在本机注册 desktop-compat 文件夹扩展，验证授权、catalog 版本、服务健康与资源交付；不等于真实桌面视觉或手机验收。该正式版无法仅靠本扩展实现目标手机原生额度。
 
 ### main 源码合同
 
@@ -52,7 +52,7 @@
 ## 本次没有验证的设备
 
 - 没有真实 Android/iOS 手机验证。
-- 没有已安装的 OpenChamber 扩展端到端验证。
+- 已安装扩展的注册、服务健康、资源交付已验证；真实桌面最终视觉与手机端到端验证分开记录在 `UI-0.3.0.md`。
 - 没有修改、重启、升级桌面程序、打包 OpenCode 或 Magpie。
 - 360px/1100px Edge headless 结果仅为合成面板布局及桥接模拟。
 
