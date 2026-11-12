@@ -56,4 +56,18 @@ accounts[]: account_id, quota_account_id, label, email, workspace_id, available_
 - 消费成功/重复/错误的响应合同未作为通用协议确认；默认判定器不会把 HTTP 200 当作成功。
 - 0.2.0 的生产协调器和消费适配器均为 `enabled=false`，没有配置或前端开关，所有写测试只用 mock。禁止为验证拒绝分支对真实消费端点发 POST。
 
+### 封装服务的响应合同（已实现判定器，未接生产）
+
+封装服务按 `redeem_request_id` 去重，已记录的同一请求 ID 再次请求会返回已存的状态码和结果，不重复提交。`classifyConsumeResponse` 只信任封装服务自身的标记：
+
+| 响应 | 判定 |
+| --- | --- |
+| `200` 且 `success === true` | 成功（含消费前后数量、`redeem_request_id`） |
+| `409` 且 `error` 非空 | 拒绝（无可用卡 / 同一 UUID 换账号或工作区） |
+| `403` 且 `error` 非空 | 拒绝（消费开关关闭） |
+| `502` 且 `success === false` 且 `outcome === "unknown"` | 结果不明（保留请求 ID，禁止自动重试） |
+| 其他（含裸 200、`success:false` 的 200、无 `outcome` 的 502） | 未验证，按结果不明锁定 |
+
+判定器**没有**接入生产路径：当前 `enabled=false` 且不向消费适配器注入它，真实消费仍不会发起。真实上游的业务成功字段、按 UUID 查询最终结果的接口、上游 UUID 幂等均未确认；判定器只识别封装服务的合同，不代表真实消费成功已验证。
+
 所有 bearer 只发往管理员配置的同一 origin 和固定端点；拒绝重定向，不回显原始上游错误，不代理任意 URL。扩展不直连 ChatGPT OAuth 或 CPA 管理 API。

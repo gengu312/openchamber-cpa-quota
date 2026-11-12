@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createResetActions, RESET_CONFIRMATION } from '../src/reset-actions.mjs';
-import { createResetConsumer, UUID4, RESET_CONSUME_PATH } from '../src/reset-consume.mjs';
+import { createResetConsumer, classifyConsumeResponse, UUID4, RESET_CONSUME_PATH } from '../src/reset-consume.mjs';
 import { createResetDirectory, parseResetCredits } from '../src/reset-credits.mjs';
 import { DEFAULT_ORIGIN } from '../src/upstream.mjs';
 import { deferred, json, resetFixture } from './helpers.mjs';
@@ -191,6 +191,40 @@ test('consume validates targets/UUID before credentials, bounds response, only v
   const classified = createResetConsumer({ enabled: true, loadCredential: async () => ({ origin: DEFAULT_ORIGIN, key: 'SYNTHETIC' }), fetchImpl: async () => json({ mockOnlyVerified: true }),
     classifyResponse: (status, body) => status === 200 && body.mockOnlyVerified ? { status: 'succeeded' } : null });
   assert.equal((await classified(target)).status, 'succeeded');
+});
+
+test('wrapped-service contract classifier: 200 success, 409/403 rejected, 502 unknown, rest unverified', async () => {
+  // Direct classifier unit checks against the hosting service's documented contract.
+  assert.deepEqual(classifyConsumeResponse(200, { success: true, account: 'x', redeem_request_id: 'r', before: 2, after: 1 }), { status: 'succeeded' });
+  assert.deepEqual(classifyConsumeResponse(409, { error: 'no available reset credit' }), { status: 'rejected', code: 'NO_CREDITS' });
+  assert.deepEqual(classifyConsumeResponse(409, { error: 'redeem_request_id bound to another account' }), { status: 'rejected', code: 'NO_CREDITS' });
+  assert.deepEqual(classifyConsumeResponse(403, { error: 'consume disabled' }), { status: 'rejected', code: 'FORBIDDEN' });
+  assert.deepEqual(classifyConsumeResponse(502, { success: false, outcome: 'unknown' }), { status: 'outcome-unknown', code: 'OUTCOME_UNKNOWN' });
+  // Anything not in the contract stays unverified — including bare 200, success:false on 200,
+  // and a 502 without outcome:"unknown". Real upstream business success is NOT trusted here.
+  for (const [s, b] of [[200, { success: false }], [200, {}], [200, { success: 'true' }], [502, { success: false }], [502, {}], [500, { error: 'x' }], [201, { success: true }]]) {
+    assert.deepEqual(classifyConsumeResponse(s, b), { status: 'outcome-unknown', code: 'RESPONSE_UNVERIFIED' });
+  }
+});
+
+test('consumer wired with contract classifier: success and idempotent replay recognised, unknown stays locked', async () => {
+  const target = { accountId: 'synthetic', workspaceId: 'synthetic-workspace', redeemRequestId: '12345678-1234-4234-9234-123456789abc' };
+  const cred = async () => ({ origin: DEFAULT_ORIGIN, key: 'SYNTHETIC' });
+  // Verified success.
+  const ok = createResetConsumer({ enabled: true, loadCredential: cred, classifyResponse: classifyConsumeResponse, fetchImpl: async () => json({ success: true, before: 2, after: 1 }) });
+  assert.deepEqual(await ok(target), { status: 'succeeded' });
+  // Deduped replay of a recorded success returns the stored result (also success:true).
+  const replay = createResetConsumer({ enabled: true, loadCredential: cred, classifyResponse: classifyConsumeResponse, fetchImpl: async () => json({ success: true, replay: true }) });
+  assert.equal((await replay(target)).status, 'succeeded');
+  // No available credit.
+  const noCredit = createResetConsumer({ enabled: true, loadCredential: cred, classifyResponse: classifyConsumeResponse, fetchImpl: async () => json({ error: 'no available reset credit' }, 409) });
+  assert.deepEqual(await noCredit(target), { status: 'rejected', code: 'NO_CREDITS' });
+  // Unknown outcome: stays locked, never auto-retried, no private field leaks.
+  const unknown = createResetConsumer({ enabled: true, loadCredential: cred, classifyResponse: classifyConsumeResponse, fetchImpl: async () => json({ success: false, outcome: 'unknown', detail: 'private upstream' }, 502) });
+  const ures = await unknown(target);
+  assert.equal(ures.status, 'outcome-unknown');
+  assert.equal(ures.code, 'OUTCOME_UNKNOWN');
+  assert(!JSON.stringify(ures).includes('private'));
 });
 
 test('prepare cannot expose awaiting-confirmation before the durable snapshot has finished saving', async () => {
