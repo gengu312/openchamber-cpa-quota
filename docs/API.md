@@ -26,8 +26,11 @@ windows[]: id, label, used_percent, remaining_percent, resets_at,
 
 ```text
 generated_at
-accounts[]: account_id, label, email, workspace_id, available_count, error
+accounts[]: account_id, quota_account_id, label, email, workspace_id, available_count, error
 ```
+
+- `quota_account_id` 是与额度接口 `accounts[].id` 完全一致的公共键，面板据此把重置卡匹配到对应 Codex 额度卡片（`resetAccount.quota_account_id === quotaAccount.id`）。缺少该字段的记录不匹配任何卡片。
+- `account_id` 是消费命名空间，与 `quota_account_id` 通常不同，仅用于消费请求，不参与匹配。
 
 没有单卡 ID 或有效期不能解释为永久有效，也不虚构选卡功能。原始 account_id/workspace_id 保留在服务端内存目录；面板只接收脱敏目标标识。
 

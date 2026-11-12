@@ -2,7 +2,8 @@
   "generated_at": "2026-11-05T06:00:00Z",
   "accounts": [
     {
-      "account_id": "synthetic-codex-1",
+      "account_id": "synthetic-reset-op-1",
+      "quota_account_id": "synthetic-codex-1",
       "label": "Synthetic Codex A",
       "email": "synthetic@example.invalid",
       "workspace_id": "synthetic-workspace",

@@ -65,7 +65,7 @@ test('raw identifiers, arbitrary labels, plans and errors never cross client bou
   assert.equal(parsed.upstreamError, true);
 });
 
-test('reset keys link quota and credit records on identical raw id without exposing it', async () => {
+test('reset keys link via quota_account_id, never the consume account_id', async () => {
   const quota = parseQuotas(await quotaFixture());
   const credits = parseResetCredits(await resetFixture());
   const codex = quota.accounts.find((a) => a.provider === 'codex');
@@ -74,10 +74,22 @@ test('reset keys link quota and credit records on identical raw id without expos
   assert.match(codex.resetKey, /^[0-9a-f]{12}$/);
   const output = JSON.stringify({ quota, credits });
   assert(!output.includes('synthetic-codex-1'));
+  assert(!output.includes('synthetic-reset-op-1'));
   assert(!output.includes('synthetic@example.invalid'));
-  // Different raw ids never collide; a non-codex quota account matches nothing.
+  // A non-codex quota account matches nothing.
   const claude = quota.accounts.find((a) => a.provider === 'claude');
   assert.notEqual(claude.resetKey, credit.resetKey);
+  // Matching is keyed on quota_account_id: changing the consume account_id keeps the link,
+  // changing quota_account_id breaks it, and a missing quota_account_id never matches.
+  const raw = await resetFixture();
+  raw.accounts[0].account_id = 'completely-different-op-id';
+  assert.equal(parseResetCredits(raw).accounts[0].resetKey, codex.resetKey);
+  const broken = await resetFixture();
+  broken.accounts[0].quota_account_id = 'some-other-quota-id';
+  assert.notEqual(parseResetCredits(broken).accounts[0].resetKey, codex.resetKey);
+  const missing = await resetFixture();
+  delete missing.accounts[0].quota_account_id;
+  assert.equal(parseResetCredits(missing).accounts[0].resetKey, null);
 });
 
 test('schema drift rejects unusable envelope, skips individual malformed entries', async () => {

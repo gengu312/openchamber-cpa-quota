@@ -16,13 +16,15 @@ export function parseResetCredits(raw) {
   const seen = new Set();
   const accounts = raw.accounts.map((account) => {
     if (!isObject(account) || !validId(account.account_id)) throw new QuotaError('SCHEMA');
-    // Different namespaces: matching source strings do NOT establish quota-account binding.
+    // Link to the quota account only via the upstream-provided quota_account_id; the
+    // consume account_id is a different namespace and never used for matching.
+    const quotaAccountId = validId(account.quota_account_id) ? account.quota_account_id : null;
     const workspaceId = validId(account.workspace_id) ? account.workspace_id : null;
     const id = hash(['reset-codex', account.account_id, workspaceId]);
     if (seen.has(id)) throw new QuotaError('SCHEMA');
     seen.add(id);
     return {
-      id, resetKey: resetKeyFor(account.account_id),
+      id, resetKey: quotaAccountId === null ? null : resetKeyFor(quotaAccountId),
       label: `重置卡账号 · ${hash(['reset-account', account.account_id]).slice(0, 6)}`,
       workspace: workspaceId ? `工作区 · ${hash(['reset-workspace', workspaceId]).slice(0, 6)}` : '工作区未知',
       sourceRevision: hash([account.account_id, workspaceId, generatedAt, account.available_count, Boolean(account.error)]),
