@@ -92,18 +92,16 @@ h2 { font-size: 1rem; font-weight: 650; }
 .account.dragging { opacity: .45; }
 .account.drop-target { border-color: var(--oc-primary); box-shadow: inset 0 3px var(--oc-primary); }
 .empty-state { color: var(--oc-muted); padding: 28px 14px; text-align: center; }
-.credits { margin-top: 20px; padding: 18px; border: 1px solid var(--oc-border); border-radius: 10px; }
 .section-heading > button { font-size: .8125rem; }
-.credits > .meta { margin-top: 5px; }
-.credits-content { margin-top: 12px; }
-.credit-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 12px 0; }
-.credit-row strong { font: 600 .9375rem var(--oc-mono); color: var(--oc-success-text, var(--quota-green)); }
-.credit-row .meta { flex-basis: 100%; }
-.action-details { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--oc-border); }
+.credit-area { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--oc-border); }
+.credit-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.credit-title { color: var(--oc-muted); font-size: .8125rem; font-weight: 600; }
+.credit-query { min-height: 30px; padding: 3px 8px; }
+.credit-area > p { margin-top: 8px; }
+.credit-count { font: 600 .875rem var(--oc-mono); color: var(--oc-success-text, var(--quota-green)); }
+.action-details { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--oc-border); }
 summary { cursor: pointer; font-size: .8125rem; min-height: 32px; padding: 6px 0; }
 .reset-actions { display: grid; gap: 12px; margin-top: 12px; font-size: .75rem; }
-.reset-actions > label { display: grid; gap: 8px; }
-.reset-actions select { color: var(--oc-fg); background: var(--oc-bg); border: 1px solid var(--oc-border); padding: 10px; min-width: 0; width: 100%; border-radius: 6px; }
 .reset-actions .acknowledgement { display: flex; align-items: flex-start; }
 .acknowledgement input { margin-top: 4px; }
 .reset-actions .warning { font-size: .6875rem; }

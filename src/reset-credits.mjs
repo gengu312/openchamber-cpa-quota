@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { DEFAULT_ORIGIN, validateOrigin } from './upstream.mjs';
 import { QuotaError } from './errors.mjs';
-import { isObject, parseTimestamp } from './parse.mjs';
+import { isObject, parseTimestamp, resetKeyFor } from './parse.mjs';
 
 export const RESET_CREDITS_PATH = '/quota/api/codex/reset-credits';
 const hash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 24);
@@ -22,7 +22,8 @@ export function parseResetCredits(raw) {
     if (seen.has(id)) throw new QuotaError('SCHEMA');
     seen.add(id);
     return {
-      id, label: `重置卡账号 · ${hash(['reset-account', account.account_id]).slice(0, 6)}`,
+      id, resetKey: resetKeyFor(account.account_id),
+      label: `重置卡账号 · ${hash(['reset-account', account.account_id]).slice(0, 6)}`,
       workspace: workspaceId ? `工作区 · ${hash(['reset-workspace', workspaceId]).slice(0, 6)}` : '工作区未知',
       sourceRevision: hash([account.account_id, workspaceId, generatedAt, account.available_count, Boolean(account.error)]),
       selectable: workspaceId !== null,

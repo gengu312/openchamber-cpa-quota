@@ -3,6 +3,9 @@ import { QuotaError } from './errors.mjs';
 
 export const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const digest = (value) => createHash('sha256').update(value).digest('hex').slice(0, 12);
+// Shared pseudonymous key linking a quota account to its reset-credit record when
+// both upstreams use the same account id string. Never the raw id itself.
+export const resetKeyFor = (rawAccountId) => digest(JSON.stringify(['reset-key', rawAccountId]));
 const identity = (value) => typeof value === 'string' && value.length > 0 && value.length <= 1024;
 const amount = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 const percent = (value) => amount(value) !== null && value <= 100 ? value : null;
@@ -72,6 +75,7 @@ export function parseQuotas(raw) {
     }
     accounts.push({
       id, provider,
+      resetKey: resetKeyFor(account.id),
       label: `${providerNames[provider] ?? '其他'} · ${id.slice(0, 6)}`,
       plan: typeof account.plan === 'string' ? plans.get(account.plan.toLowerCase()) ?? null : null,
       status: statuses.has(account.status) ? account.status : 'unknown',

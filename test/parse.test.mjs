@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseQuotas } from '../src/parse.mjs';
+import { parseResetCredits } from '../src/reset-credits.mjs';
 import { toNative, publicSnapshot } from '../src/view.mjs';
-import { quotaFixture } from './helpers.mjs';
+import { quotaFixture, resetFixture } from './helpers.mjs';
 
 test('parse synthetic quota: null vs zero, usage_error keeps quota, null reset', async () => {
   const data = parseQuotas(await quotaFixture());
@@ -62,6 +63,21 @@ test('raw identifiers, arbitrary labels, plans and errors never cross client bou
   assert(!output.includes('SECRET_RAW'));
   assert(!output.includes('synthetic-codex-1'));
   assert.equal(parsed.upstreamError, true);
+});
+
+test('reset keys link quota and credit records on identical raw id without exposing it', async () => {
+  const quota = parseQuotas(await quotaFixture());
+  const credits = parseResetCredits(await resetFixture());
+  const codex = quota.accounts.find((a) => a.provider === 'codex');
+  const credit = credits.accounts[0];
+  assert.equal(codex.resetKey, credit.resetKey);
+  assert.match(codex.resetKey, /^[0-9a-f]{12}$/);
+  const output = JSON.stringify({ quota, credits });
+  assert(!output.includes('synthetic-codex-1'));
+  assert(!output.includes('synthetic@example.invalid'));
+  // Different raw ids never collide; a non-codex quota account matches nothing.
+  const claude = quota.accounts.find((a) => a.provider === 'claude');
+  assert.notEqual(claude.resetKey, credit.resetKey);
 });
 
 test('schema drift rejects unusable envelope, skips individual malformed entries', async () => {
